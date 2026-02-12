@@ -313,3 +313,38 @@ public final class MindMaster {
 
         public LatticeRenderer(MindMaster.MemoryStore store, int maxDepth, String indentStr) {
             this.store = store;
+            this.maxDepth = Math.min(maxDepth, MAX_NODE_DEPTH);
+            this.indentStr = indentStr != null ? indentStr : "  ";
+        }
+
+        public String renderFrom(String startNodeId) {
+            StringBuilder sb = new StringBuilder();
+            Set<String> visited = new HashSet<>();
+            renderNode(sb, startNodeId, 0, visited);
+            return sb.toString();
+        }
+
+        private void renderNode(StringBuilder sb, String nodeId, int depth, Set<String> visited) {
+            if (depth > maxDepth || visited.contains(nodeId)) return;
+            Optional<MindMaster.MemoryNode> opt = store.getNode(nodeId);
+            if (!opt.isPresent()) return;
+            visited.add(nodeId);
+            MindMaster.MemoryNode n = opt.get();
+            for (int i = 0; i < depth; i++) sb.append(indentStr);
+            sb.append("[T").append(n.getRecallTier()).append("] ").append(n.getLabel()).append(" (").append(n.getNodeId()).append(")\n");
+            for (String linkId : n.getOutLinkIds()) {
+                store.getLink(linkId).map(MindMaster.MemoryLink::getToAnchorId).ifPresent(toId -> renderNode(sb, toId, depth + 1, visited));
+            }
+        }
+
+        public String renderFullMap() {
+            StringBuilder sb = new StringBuilder();
+            for (String anchorId : store.listAnchorIds()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append("--- Root: ").append(anchorId).append(" ---\n");
+                sb.append(renderFrom(anchorId));
+            }
+            return sb.toString();
+        }
+    }
+
