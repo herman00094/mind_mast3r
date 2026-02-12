@@ -138,3 +138,38 @@ public final class MindMaster {
             this.nodes = new ConcurrentHashMap<>();
             this.links = new ConcurrentHashMap<>();
             this.anchorIdOrder = new ArrayList<>();
+            this.currentSynapseEpoch = 0;
+        }
+
+        public int getCapacity() { return capacity; }
+        public int nodeCount() { return nodes.size(); }
+        public int linkCount() { return links.size(); }
+        public long getCurrentSynapseEpoch() { return currentSynapseEpoch; }
+        public void advanceSynapseEpoch() { currentSynapseEpoch++; }
+
+        public Optional<MindMaster.MemoryNode> getNode(String nodeId) {
+            return Optional.ofNullable(nodes.get(nodeId));
+        }
+
+        public Optional<MindMaster.MemoryLink> getLink(String linkId) {
+            return Optional.ofNullable(links.get(linkId));
+        }
+
+        public MindMaster.MemoryNode pinAnchor(String nodeId, String label, String contentHash, int recallTier) {
+            if (nodes.size() >= capacity) throw new IllegalStateException("Anchor slot full");
+            if (nodeId == null || nodeId.isEmpty()) throw new IllegalArgumentException("Zero anchor id");
+            if (nodes.containsKey(nodeId)) throw new IllegalStateException("Duplicate anchor id");
+            MindMaster.MemoryNode node = new MindMaster.MemoryNode(nodeId, label, contentHash, recallTier);
+            nodes.put(nodeId, node);
+            anchorIdOrder.add(nodeId);
+            return node;
+        }
+
+        public MindMaster.MemoryLink forgeLink(String linkId, String fromAnchorId, String toAnchorId, int linkKind, String configHash) {
+            if (fromAnchorId == null || toAnchorId == null || fromAnchorId.isEmpty() || toAnchorId.isEmpty())
+                throw new IllegalArgumentException("Invalid link endpoints");
+            if (!nodes.containsKey(fromAnchorId) || !nodes.containsKey(toAnchorId))
+                throw new IllegalArgumentException("Anchor not found");
+            MindMaster.MemoryLink link = new MindMaster.MemoryLink(linkId, fromAnchorId, toAnchorId, linkKind, configHash);
+            links.put(linkId, link);
+            nodes.get(fromAnchorId).addOutLink(linkId);
