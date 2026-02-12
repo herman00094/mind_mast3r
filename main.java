@@ -33,3 +33,38 @@ public final class MindMaster {
     }
 
     public MindMaster(int capacity) {
+        this.store = new MindMaster.MemoryStore(capacity);
+        this.synapseService = new MindMaster.SynapseService(store);
+        this.recallSerializer = new MindMaster.RecallSerializer(store);
+    }
+
+    public MindMaster.MemoryStore getStore() { return store; }
+    public MindMaster.SynapseService getSynapseService() { return synapseService; }
+    public MindMaster.RecallSerializer getRecallSerializer() { return recallSerializer; }
+
+    private volatile MindMaster.LatticeRenderer latticeRenderer;
+    private volatile MindMaster.EpochFilter epochFilter;
+    private volatile MindMaster.LatticeValidator latticeValidator;
+
+    public MindMaster.LatticeRenderer getLatticeRenderer() {
+        if (latticeRenderer == null) latticeRenderer = new MindMaster.LatticeRenderer(store, MAX_NODE_DEPTH, "  ");
+        return latticeRenderer;
+    }
+
+    public MindMaster.EpochFilter getEpochFilter() {
+        if (epochFilter == null) epochFilter = new MindMaster.EpochFilter(store);
+        return epochFilter;
+    }
+
+    public MindMaster.LatticeValidator getLatticeValidator() {
+        if (latticeValidator == null) latticeValidator = new MindMaster.LatticeValidator(store);
+        return latticeValidator;
+    }
+
+    // --- Memory node (anchor) ---
+    public static final class MemoryNode {
+        private final String nodeId;
+        private final String label;
+        private final String contentHash;
+        private final int recallTier;
+        private final long pinnedAtEpochMs;
