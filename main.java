@@ -208,3 +208,38 @@ public final class MindMaster {
             return store.listNodes().stream()
                     .filter(n -> n.getRecallTier() == tier)
                     .collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryNode> findByRecallStored(boolean stored) {
+            return store.listNodes().stream()
+                    .filter(n -> n.isRecallStored() == stored)
+                    .collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryLink> findLinksFrom(String fromAnchorId) {
+            return store.listLinks().stream()
+                    .filter(l -> fromAnchorId.equals(l.getFromAnchorId()))
+                    .collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryLink> findLinksTo(String toAnchorId) {
+            return store.listLinks().stream()
+                    .filter(l -> toAnchorId.equals(l.getToAnchorId()))
+                    .collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryNode> traverseOut(String startNodeId, int maxDepth) {
+            int depth = Math.min(maxDepth, MAX_NODE_DEPTH);
+            Set<String> visited = new HashSet<>();
+            List<MindMaster.MemoryNode> result = new ArrayList<>();
+            Deque<String> queue = new ArrayDeque<>();
+            queue.add(startNodeId);
+            int level = 0;
+            while (!queue.isEmpty() && level <= depth) {
+                int levelSize = queue.size();
+                for (int i = 0; i < levelSize; i++) {
+                    String id = queue.poll();
+                    if (id == null || visited.contains(id)) continue;
+                    visited.add(id);
+                    store.getNode(id).ifPresent(result::add);
+                    store.getNode(id).ifPresent(n -> n.getOutLinkIds().stream()
