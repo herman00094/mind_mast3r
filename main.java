@@ -68,3 +68,38 @@ public final class MindMaster {
         private final String contentHash;
         private final int recallTier;
         private final long pinnedAtEpochMs;
+        private final Set<String> outLinkIds;
+        private final Set<String> inLinkIds;
+        private boolean recallStored;
+
+        public MemoryNode(String nodeId, String label, String contentHash, int recallTier) {
+            this.nodeId = Objects.requireNonNull(nodeId, "nodeId");
+            this.label = label != null && label.length() <= MAX_LABEL_LEN ? label : (label != null ? label.substring(0, MAX_LABEL_LEN) : "");
+            this.contentHash = contentHash != null ? contentHash : "";
+            this.recallTier = Math.max(0, Math.min(7, recallTier));
+            this.pinnedAtEpochMs = System.currentTimeMillis();
+            this.outLinkIds = new HashSet<>();
+            this.inLinkIds = new HashSet<>();
+            this.recallStored = false;
+        }
+
+        public String getNodeId() { return nodeId; }
+        public String getLabel() { return label; }
+        public String getContentHash() { return contentHash; }
+        public int getRecallTier() { return recallTier; }
+        public long getPinnedAtEpochMs() { return pinnedAtEpochMs; }
+        public Set<String> getOutLinkIds() { return Collections.unmodifiableSet(outLinkIds); }
+        public Set<String> getInLinkIds() { return Collections.unmodifiableSet(inLinkIds); }
+        public boolean isRecallStored() { return recallStored; }
+        public void setRecallStored(boolean recallStored) { this.recallStored = recallStored; }
+
+        void addOutLink(String linkId) { outLinkIds.add(linkId); }
+        void addInLink(String linkId) { inLinkIds.add(linkId); }
+        void removeOutLink(String linkId) { outLinkIds.remove(linkId); }
+        void removeInLink(String linkId) { inLinkIds.remove(linkId); }
+    }
+
+    // --- Memory link (edge) ---
+    public static final class MemoryLink {
+        private final String linkId;
+        private final String fromAnchorId;
