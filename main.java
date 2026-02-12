@@ -278,3 +278,38 @@ public final class MindMaster {
                 level++;
             }
             return result;
+        }
+
+        public Map<String, Integer> nodeDegreeOut() {
+            Map<String, Integer> out = new HashMap<>();
+            for (MindMaster.MemoryNode n : store.listNodes())
+                out.put(n.getNodeId(), n.getOutLinkIds().size());
+            return out;
+        }
+
+        public Map<String, Integer> nodeDegreeIn() {
+            Map<String, Integer> in = new HashMap<>();
+            for (MindMaster.MemoryNode n : store.listNodes())
+                in.put(n.getNodeId(), n.getInLinkIds().size());
+            return in;
+        }
+
+        public List<MindMaster.MemoryNode> sortByPinnedTime(boolean ascending) {
+            List<MindMaster.MemoryNode> list = new ArrayList<>(store.listNodes());
+            list.sort(ascending ? Comparator.comparingLong(MindMaster.MemoryNode::getPinnedAtEpochMs) : (a, b) -> Long.compare(b.getPinnedAtEpochMs(), a.getPinnedAtEpochMs()));
+            return list;
+        }
+
+        public Optional<MindMaster.MemoryNode> nodeByContentHash(String contentHash) {
+            return store.listNodes().stream().filter(n -> contentHash.equals(n.getContentHash())).findFirst();
+        }
+    }
+
+    // --- Lattice renderer (text map) ---
+    public static final class LatticeRenderer {
+        private final MindMaster.MemoryStore store;
+        private final int maxDepth;
+        private final String indentStr;
+
+        public LatticeRenderer(MindMaster.MemoryStore store, int maxDepth, String indentStr) {
+            this.store = store;
