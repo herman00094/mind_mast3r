@@ -173,3 +173,38 @@ public final class MindMaster {
             MindMaster.MemoryLink link = new MindMaster.MemoryLink(linkId, fromAnchorId, toAnchorId, linkKind, configHash);
             links.put(linkId, link);
             nodes.get(fromAnchorId).addOutLink(linkId);
+            nodes.get(toAnchorId).addInLink(linkId);
+            return link;
+        }
+
+        public void storeRecall(String nodeId, String recallHash) {
+            MindMaster.MemoryNode node = nodes.get(nodeId);
+            if (node == null) throw new IllegalArgumentException("Anchor not found");
+            if (node.isRecallStored()) throw new IllegalStateException("Recall already stored");
+            node.setRecallStored(true);
+        }
+
+        public List<String> listAnchorIds() { return new ArrayList<>(anchorIdOrder); }
+        public Collection<MindMaster.MemoryNode> listNodes() { return new ArrayList<>(nodes.values()); }
+        public Collection<MindMaster.MemoryLink> listLinks() { return new ArrayList<>(links.values()); }
+    }
+
+    // --- Synapse service (search, filters, traversal) ---
+    public static final class SynapseService {
+        private final MindMaster.MemoryStore store;
+
+        public SynapseService(MindMaster.MemoryStore store) {
+            this.store = store;
+        }
+
+        public List<MindMaster.MemoryNode> findByLabelContains(String substring) {
+            if (substring == null || substring.isEmpty()) return store.listNodes().stream().collect(Collectors.toList());
+            return store.listNodes().stream()
+                    .filter(n -> n.getLabel().toLowerCase().contains(substring.toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryNode> findByRecallTier(int tier) {
+            return store.listNodes().stream()
+                    .filter(n -> n.getRecallTier() == tier)
+                    .collect(Collectors.toList());
