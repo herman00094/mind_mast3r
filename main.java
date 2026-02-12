@@ -103,3 +103,38 @@ public final class MindMaster {
     public static final class MemoryLink {
         private final String linkId;
         private final String fromAnchorId;
+        private final String toAnchorId;
+        private final int linkKind;
+        private final long forgedAtEpochMs;
+        private final String configHash;
+
+        public MemoryLink(String linkId, String fromAnchorId, String toAnchorId, int linkKind, String configHash) {
+            this.linkId = Objects.requireNonNull(linkId, "linkId");
+            this.fromAnchorId = Objects.requireNonNull(fromAnchorId, "fromAnchorId");
+            this.toAnchorId = Objects.requireNonNull(toAnchorId, "toAnchorId");
+            this.linkKind = Math.max(0, linkKind);
+            this.forgedAtEpochMs = System.currentTimeMillis();
+            this.configHash = configHash != null ? configHash : "";
+        }
+
+        public String getLinkId() { return linkId; }
+        public String getFromAnchorId() { return fromAnchorId; }
+        public String getToAnchorId() { return toAnchorId; }
+        public int getLinkKind() { return linkKind; }
+        public long getForgedAtEpochMs() { return forgedAtEpochMs; }
+        public String getConfigHash() { return configHash; }
+    }
+
+    // --- In-memory store ---
+    public static final class MemoryStore {
+        private final int capacity;
+        private final Map<String, MindMaster.MemoryNode> nodes;
+        private final Map<String, MindMaster.MemoryLink> links;
+        private final List<String> anchorIdOrder;
+        private long currentSynapseEpoch;
+
+        public MemoryStore(int capacity) {
+            this.capacity = Math.max(1, capacity);
+            this.nodes = new ConcurrentHashMap<>();
+            this.links = new ConcurrentHashMap<>();
+            this.anchorIdOrder = new ArrayList<>();
