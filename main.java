@@ -243,3 +243,38 @@ public final class MindMaster {
                     visited.add(id);
                     store.getNode(id).ifPresent(result::add);
                     store.getNode(id).ifPresent(n -> n.getOutLinkIds().stream()
+                            .map(lid -> store.getLink(lid))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(MindMaster.MemoryLink::getToAnchorId)
+                            .forEach(queue::add));
+                }
+                level++;
+            }
+            return result;
+        }
+
+        public List<MindMaster.MemoryNode> traverseIn(String startNodeId, int maxDepth) {
+            int depth = Math.min(maxDepth, MAX_NODE_DEPTH);
+            Set<String> visited = new HashSet<>();
+            List<MindMaster.MemoryNode> result = new ArrayList<>();
+            Deque<String> queue = new ArrayDeque<>();
+            queue.add(startNodeId);
+            int level = 0;
+            while (!queue.isEmpty() && level <= depth) {
+                int levelSize = queue.size();
+                for (int i = 0; i < levelSize; i++) {
+                    String id = queue.poll();
+                    if (id == null || visited.contains(id)) continue;
+                    visited.add(id);
+                    store.getNode(id).ifPresent(result::add);
+                    store.getNode(id).ifPresent(n -> n.getInLinkIds().stream()
+                            .map(lid -> store.getLink(lid))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .map(MindMaster.MemoryLink::getFromAnchorId)
+                            .forEach(queue::add));
+                }
+                level++;
+            }
+            return result;
