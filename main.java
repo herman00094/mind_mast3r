@@ -453,3 +453,38 @@ public final class MindMaster {
         }
 
         public String toLatticeJson() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("{\"version\":\"").append(LATTICE_VERSION).append("\",\"epoch\":").append(store.getCurrentSynapseEpoch()).append(",\"nodes\":[");
+            List<String> ids = store.listAnchorIds();
+            for (int i = 0; i < ids.size(); i++) {
+                MindMaster.MemoryNode n = store.getNode(ids.get(i)).orElse(null);
+                if (n == null) continue;
+                if (i > 0) sb.append(",");
+                sb.append("{\"id\":\"").append(escape(n.getNodeId())).append("\",\"label\":\"").append(escape(n.getLabel())).append("\",\"contentHash\":\"").append(escape(n.getContentHash())).append("\",\"tier\":").append(n.getRecallTier()).append(",\"recallStored\":").append(n.isRecallStored()).append("}");
+            }
+            sb.append("],\"links\":[");
+            List<MindMaster.MemoryLink> linkList = new ArrayList<>(store.listLinks());
+            for (int i = 0; i < linkList.size(); i++) {
+                MindMaster.MemoryLink l = linkList.get(i);
+                if (i > 0) sb.append(",");
+                sb.append("{\"id\":\"").append(escape(l.getLinkId())).append("\",\"from\":\"").append(escape(l.getFromAnchorId())).append("\",\"to\":\"").append(escape(l.getToAnchorId())).append("\",\"kind\":").append(l.getLinkKind()).append("}");
+            }
+            sb.append("]}");
+            return sb.toString();
+        }
+
+        private static String escape(String s) {
+            if (s == null) return "";
+            return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+        }
+
+        public void exportToFile(Path path) throws IOException {
+            Files.write(path, toLatticeJson().getBytes(StandardCharsets.UTF_8));
+        }
+
+        public static String hashContent(String content) {
+            if (content == null) return "";
+            try {
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                byte[] digest = md.digest(content.getBytes(StandardCharsets.UTF_8));
+                StringBuilder hex = new StringBuilder();
