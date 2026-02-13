@@ -523,3 +523,30 @@ public final class MindMaster {
                     System.out.println("Total edges: " + val.totalEdges());
                     return;
                 case "stats":
+                    MindMaster.EpochFilter ef = mm.getEpochFilter();
+                    System.out.println("Nodes: " + store.nodeCount() + ", Links: " + store.linkCount());
+                    System.out.println("Oldest pinned: " + ef.oldestPinnedTime() + ", Newest: " + ef.newestPinnedTime());
+                    System.out.println("Synapse epoch: " + store.getCurrentSynapseEpoch());
+                    return;
+                default:
+                    break;
+            }
+        }
+
+        String n1 = idGen.next();
+        String n2 = idGen.next();
+        String n3 = idGen.next();
+        store.pinAnchor(n1, "First memory node", MindMaster.RecallSerializer.hashContent("first"), 1);
+        store.pinAnchor(n2, "Second memory node", MindMaster.RecallSerializer.hashContent("second"), 2);
+        store.pinAnchor(n3, "Third memory node", MindMaster.RecallSerializer.hashContent("third"), 0);
+        store.forgeLink("link-1", n1, n2, 0, "cfg1");
+        store.forgeLink("link-2", n2, n3, 1, "cfg2");
+        store.storeRecall(n1, "recall-hash-1");
+
+        System.out.println("Nodes: " + store.nodeCount() + ", Links: " + store.linkCount());
+        System.out.println("By label 'memory': " + svc.findByLabelContains("memory").size());
+        System.out.println("Traverse out from " + n1 + ": " + svc.traverseOut(n1, 3).size() + " nodes");
+        System.out.println("Render:\n" + mm.getLatticeRenderer().renderFrom(n1));
+        System.out.println("JSON (preview): " + ser.toLatticeJson().substring(0, Math.min(200, ser.toLatticeJson().length())) + "...");
+    }
+}
