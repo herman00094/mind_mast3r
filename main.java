@@ -383,3 +383,38 @@ public final class MindMaster {
 
         public boolean allLinksHaveAnchors() {
             for (MindMaster.MemoryLink l : store.listLinks()) {
+                if (!store.getNode(l.getFromAnchorId()).isPresent() || !store.getNode(l.getToAnchorId()).isPresent())
+                    return false;
+            }
+            return true;
+        }
+
+        public List<String> orphanAnchors() {
+            List<String> orphans = new ArrayList<>();
+            for (MindMaster.MemoryNode n : store.listNodes()) {
+                if (n.getInLinkIds().isEmpty() && n.getOutLinkIds().isEmpty()) orphans.add(n.getNodeId());
+            }
+            return orphans;
+        }
+
+        public int totalEdges() {
+            return store.linkCount();
+        }
+
+        public boolean isAcyclicFrom(String startNodeId) {
+            Set<String> visited = new HashSet<>();
+            Set<String> stack = new HashSet<>();
+            return !hasCycleDfs(startNodeId, visited, stack);
+        }
+
+        private boolean hasCycleDfs(String nodeId, Set<String> visited, Set<String> stack) {
+            if (stack.contains(nodeId)) return true;
+            if (visited.contains(nodeId)) return false;
+            visited.add(nodeId);
+            stack.add(nodeId);
+            Optional<MindMaster.MemoryNode> n = store.getNode(nodeId);
+            if (n.isPresent()) {
+                for (String linkId : n.get().getOutLinkIds()) {
+                    Optional<String> toId = store.getLink(linkId).map(MindMaster.MemoryLink::getToAnchorId);
+                    if (toId.isPresent() && hasCycleDfs(toId.get(), visited, stack)) {
+                        stack.remove(nodeId);
