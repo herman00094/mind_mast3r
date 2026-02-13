@@ -488,3 +488,38 @@ public final class MindMaster {
                 MessageDigest md = MessageDigest.getInstance("SHA-256");
                 byte[] digest = md.digest(content.getBytes(StandardCharsets.UTF_8));
                 StringBuilder hex = new StringBuilder();
+                for (byte b : digest) hex.append(String.format("%02x", b));
+                return hex.toString();
+            } catch (NoSuchAlgorithmException e) {
+                return Integer.toHexString(content.hashCode());
+            }
+        }
+    }
+
+    // --- CLI entry ---
+    public static void main(String[] args) throws IOException {
+        MindMaster mm = new MindMaster(8192);
+        MindMaster.MemoryStore store = mm.getStore();
+        MindMaster.SynapseService svc = mm.getSynapseService();
+        MindMaster.RecallSerializer ser = mm.getRecallSerializer();
+        MindMaster.AnchorIdGenerator idGen = new MindMaster.AnchorIdGenerator(1000);
+
+        if (args.length > 0) {
+            switch (args[0].toLowerCase()) {
+                case "export":
+                    Path out = args.length > 1 ? Paths.get(args[1]) : Paths.get("mindmaster_lattice.json");
+                    ser.exportToFile(out);
+                    System.out.println("Exported to " + out.toAbsolutePath());
+                    return;
+                case "render":
+                    String root = args.length > 1 ? args[1] : (store.listAnchorIds().isEmpty() ? null : store.listAnchorIds().get(0));
+                    if (root != null) System.out.println(mm.getLatticeRenderer().renderFrom(root));
+                    else System.out.println(mm.getLatticeRenderer().renderFullMap());
+                    return;
+                case "validate":
+                    MindMaster.LatticeValidator val = mm.getLatticeValidator();
+                    System.out.println("Links reference valid anchors: " + val.allLinksHaveAnchors());
+                    System.out.println("Orphan anchors: " + val.orphanAnchors());
+                    System.out.println("Total edges: " + val.totalEdges());
+                    return;
+                case "stats":
