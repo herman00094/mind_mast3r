@@ -418,3 +418,38 @@ public final class MindMaster {
                     Optional<String> toId = store.getLink(linkId).map(MindMaster.MemoryLink::getToAnchorId);
                     if (toId.isPresent() && hasCycleDfs(toId.get(), visited, stack)) {
                         stack.remove(nodeId);
+                        return true;
+                    }
+                }
+            }
+            stack.remove(nodeId);
+            return false;
+        }
+    }
+
+    // --- Id generator (deterministic or random) ---
+    public static final class AnchorIdGenerator {
+        private static final String PREFIX = "mm-";
+        private int sequence;
+
+        public AnchorIdGenerator() { this.sequence = 0; }
+        public AnchorIdGenerator(int start) { this.sequence = start; }
+
+        public String next() {
+            return PREFIX + Instant.now().toEpochMilli() + "-" + (sequence++) + "-" + UUID.randomUUID().toString().substring(0, 6);
+        }
+
+        public String nextShort() {
+            return PREFIX + (sequence++) + "-" + Integer.toHexString((int) (System.nanoTime() & 0xFFFF));
+        }
+    }
+
+    // --- Serializer (export/import lattice) ---
+    public static final class RecallSerializer {
+        private final MindMaster.MemoryStore store;
+
+        public RecallSerializer(MindMaster.MemoryStore store) {
+            this.store = store;
+        }
+
+        public String toLatticeJson() {
