@@ -348,3 +348,38 @@ public final class MindMaster {
         }
     }
 
+    // --- Epoch filter and stats ---
+    public static final class EpochFilter {
+        private final MindMaster.MemoryStore store;
+
+        public EpochFilter(MindMaster.MemoryStore store) {
+            this.store = store;
+        }
+
+        public List<MindMaster.MemoryNode> nodesPinnedAfter(long epochMs) {
+            return store.listNodes().stream().filter(n -> n.getPinnedAtEpochMs() >= epochMs).collect(Collectors.toList());
+        }
+
+        public List<MindMaster.MemoryLink> linksForgedAfter(long epochMs) {
+            return store.listLinks().stream().filter(l -> l.getForgedAtEpochMs() >= epochMs).collect(Collectors.toList());
+        }
+
+        public long oldestPinnedTime() {
+            return store.listNodes().stream().mapToLong(MindMaster.MemoryNode::getPinnedAtEpochMs).min().orElse(0L);
+        }
+
+        public long newestPinnedTime() {
+            return store.listNodes().stream().mapToLong(MindMaster.MemoryNode::getPinnedAtEpochMs).max().orElse(0L);
+        }
+    }
+
+    // --- Validation and invariants ---
+    public static final class LatticeValidator {
+        private final MindMaster.MemoryStore store;
+
+        public LatticeValidator(MindMaster.MemoryStore store) {
+            this.store = store;
+        }
+
+        public boolean allLinksHaveAnchors() {
+            for (MindMaster.MemoryLink l : store.listLinks()) {
